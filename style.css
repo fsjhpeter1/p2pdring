@@ -1,0 +1,21 @@
+body {
+  text-align: center;
+  background: #f4f4f4;
+  font-family: sans-serif;
+}
+canvas {
+  border: 1px solid #999;
+  margin-top: 20px;
+}
+.tools button {
+  margin: 5px;
+}
+.tools button {
+  width: 32px;
+  height: 32px;
+}
+footer {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #777;
+}
