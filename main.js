@@ -86,11 +86,6 @@ function redraw() {
   }
 }
 
-function selectCustomColor() {
-  const picker = document.getElementById("colorPicker");
-  selectColor(picker.value);
-}
-
 function generateCode() {
   pairedCode = Math.random().toString(36).substr(2, 6).toUpperCase();
   document.getElementById("pairCodeInput").value = pairedCode;
