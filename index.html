@@ -4,41 +4,48 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>三次哥 P2P 畫板</title>
-<link rel="stylesheet" href="style.css" />
 <style>
-  body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background: #222; color: #eee; }
-  #controls { margin-bottom: 10px; }
-  #pairCode { font-weight: bold; font-size: 1.2em; background: #444; padding: 5px 10px; border-radius: 5px; user-select: all; }
-  button { margin-left: 10px; padding: 5px 10px; background: #555; color: #eee; border: none; border-radius: 4px; cursor: pointer; }
-  button:hover { background: #666; }
-  #canvas { border: 2px solid #eee; background: #fff; display: block; margin-top: 10px; touch-action: none; }
-  #tools { margin-top: 10px; }
-  .color-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #eee; margin-right: 8px; cursor: pointer; display: inline-block; }
-  .selected { box-shadow: 0 0 8px 2px #00ff99; }
-  #footer { margin-top: 20px; font-size: 0.9em; text-align: center; color: #888; }
+  body {
+    margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; background: #f0f0f0;
+    font-family: Arial, sans-serif;
+  }
+  #toolbar {
+    margin: 10px; display: flex; gap: 10px; align-items: center;
+  }
+  #canvas {
+    border: 2px solid #333;
+    background: white;
+    touch-action: none;
+  }
+  #colors {
+    display: flex;
+    gap: 5px;
+  }
+  .color-swatch {
+    width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent;
+  }
+  .color-swatch.selected {
+    border-color: black;
+  }
+  #footer {
+    margin-top: 10px; font-size: 12px; color: #666;
+  }
 </style>
 </head>
 <body>
 
-<div id="controls">
-  <span>你的配對代碼：</span><span id="pairCode">---</span>
-  <button id="genCodeBtn">產生新代碼</button>
-  <button id="connectBtn">連接代碼</button>
-</div>
-
-<div id="tools">
-  <span>筆刷顏色：</span>
+<div id="toolbar">
+  <button id="createCodeBtn">生成配對代碼</button>
+  <input id="pairCodeInput" placeholder="輸入配對代碼" />
+  <button id="joinCodeBtn">連接代碼</button>
+  <button id="clearCanvasBtn">全部清除</button>
   <div id="colors">
-    <div class="color-btn selected" style="background:#000000;" data-color="#000000"></div>
-    <div class="color-btn" style="background:#FF0000;" data-color="#FF0000"></div>
-    <div class="color-btn" style="background:#00FF00;" data-color="#00FF00"></div>
-    <div class="color-btn" style="background:#0000FF;" data-color="#0000FF"></div>
-    <div class="color-btn" style="background:#FFFF00;" data-color="#FFFF00"></div>
+    <div class="color-swatch selected" style="background:#000000" data-color="#000000"></div>
+    <div class="color-swatch" style="background:#ff0000" data-color="#ff0000"></div>
+    <div class="color-swatch" style="background:#00ff00" data-color="#00ff00"></div>
+    <div class="color-swatch" style="background:#0000ff" data-color="#0000ff"></div>
+    <div class="color-swatch" style="background:#ffff00" data-color="#ffff00"></div>
   </div>
-  <button id="eraserBtn">橡皮擦</button>
-  <button id="mosaicBtn">馬賽克</button>
-  <button id="undoBtn">復原</button>
-  <button id="clearBtn">全部清除</button>
 </div>
 
 <canvas id="canvas" width="800" height="600"></canvas>
@@ -46,53 +53,6 @@
 <div id="footer">© FSpeter 呂 2025所有</div>
 
 <script src="main.js"></script>
-
-<script>
-  // 這段簡單產生隨機代碼（6碼數字字母混合）
-  function generatePairCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
-  }
-
-  const pairCodeEl = document.getElementById('pairCode');
-  const genCodeBtn = document.getElementById('genCodeBtn');
-  const connectBtn = document.getElementById('connectBtn');
-
-  let myCode = '';
-  let connectedCode = '';
-
-  // 按產生新代碼
-  genCodeBtn.addEventListener('click', () => {
-    myCode = generatePairCode();
-    pairCodeEl.textContent = myCode;
-    connectedCode = ''; // 斷開連接
-    alert('產生配對代碼: ' + myCode);
-  });
-
-  // 按連接代碼，會跳 prompt 讓你輸入對方代碼
-  connectBtn.addEventListener('click', () => {
-    const code = prompt('請輸入對方配對代碼');
-    if (!code) return alert('沒輸入代碼就不要連接啦');
-    connectedCode = code.toUpperCase();
-    alert('已連接對方代碼: ' + connectedCode);
-  });
-
-  // 一開始直接產生一組
-  genCodeBtn.click();
-
-  // 之後你要跟 main.js 溝通配對代碼這樣用：
-  window.pairCode = myCode;
-  window.connectedCode = connectedCode;
-
-  // main.js 你可以改成這樣取得配對碼
-  // let myCode = window.pairCode;
-  // let connectedCode = window.connectedCode;
-
-</script>
 
 </body>
 </html>
