@@ -1,28 +1,58 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>跨裝置同步畫圖系統</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>跨裝置同步畫圖系統</title>
+<style>
+  body {
+    margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; background: #f0f0f0;
+    font-family: Arial, sans-serif;
+  }
+  #toolbar {
+    margin: 10px; display: flex; gap: 10px; align-items: center;
+  }
+  #canvas {
+    border: 2px solid #333;
+    background: white;
+    touch-action: none;
+  }
+  #colors {
+    display: flex;
+    gap: 5px;
+  }
+  .color-swatch {
+    width: 24px; height: 24px; border-radius: 4px; cursor: pointer; border: 2px solid transparent;
+  }
+  .color-swatch.selected {
+    border-color: black;
+  }
+  #footer {
+    margin-top: 10px; font-size: 12px; color: #666;
+  }
+</style>
 </head>
 <body>
-  <div id="toolbar">
-    <input id="pairCodeInput" placeholder="輸入配對代碼" />
-    <button onclick="generateCode()">生成代碼</button>
-    <button onclick="connectCode()">連接配對</button>
-    <button onclick="selectColor('#000000')">⚫</button>
-    <button onclick="selectColor('#ff0000')">🔴</button>
-    <button onclick="selectColor('#00ff00')">🟢</button>
-    <button onclick="selectColor('#0000ff')">🔵</button>
-    <button onclick="toggleEraser()">橡皮擦</button>
-    <button onclick="undo()">復原</button>
-    <button onclick="clearCanvas()">清除</button>
+
+<div id="toolbar">
+  <button id="createCodeBtn">生成配對代碼</button>
+  <input id="pairCodeInput" placeholder="輸入配對代碼" />
+  <button id="joinCodeBtn">連接代碼</button>
+  <button id="clearCanvasBtn">全部清除</button>
+  <div id="colors">
+    <div class="color-swatch selected" style="background:#000000" data-color="#000000"></div>
+    <div class="color-swatch" style="background:#ff0000" data-color="#ff0000"></div>
+    <div class="color-swatch" style="background:#00ff00" data-color="#00ff00"></div>
+    <div class="color-swatch" style="background:#0000ff" data-color="#0000ff"></div>
+    <div class="color-swatch" style="background:#ffff00" data-color="#ffff00"></div>
   </div>
+</div>
 
-  <canvas id="canvas"></canvas>
+<canvas id="canvas" width="800" height="600"></canvas>
 
-  <footer>© FSpeter 呂 2025所有</footer>
-  <script src="main.js"></script>
+<div id="footer">© FSpeter 呂 2025所有</div>
+
+<script src="main.js"></script>
+
 </body>
 </html>
