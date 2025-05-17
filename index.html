@@ -1,150 +1,98 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <title>三次哥的畫布</title>
-  <style>
-    canvas { border: 1px solid #000; display: block; margin-top: 10px; }
-    .toolbar { margin-top: 10px; }
-    .color-button { width: 24px; height: 24px; border: none; margin-right: 5px; cursor: pointer; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>三次哥 P2P 畫板</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 10px; background: #222; color: #eee; }
+  #controls { margin-bottom: 10px; }
+  #pairCode { font-weight: bold; font-size: 1.2em; background: #444; padding: 5px 10px; border-radius: 5px; user-select: all; }
+  button { margin-left: 10px; padding: 5px 10px; background: #555; color: #eee; border: none; border-radius: 4px; cursor: pointer; }
+  button:hover { background: #666; }
+  #canvas { border: 2px solid #eee; background: #fff; display: block; margin-top: 10px; touch-action: none; }
+  #tools { margin-top: 10px; }
+  .color-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #eee; margin-right: 8px; cursor: pointer; display: inline-block; }
+  .selected { box-shadow: 0 0 8px 2px #00ff99; }
+  #footer { margin-top: 20px; font-size: 0.9em; text-align: center; color: #888; }
+</style>
 </head>
 <body>
-  <h2>三次哥的畫布 🖌️</h2>
-  <input id="codeInput" placeholder="輸入配對代碼">
-  <button id="connectBtn">連接</button>
-  <p id="status"></p>
 
-  <div class="toolbar">
-    <button class="color-button" style="background-color: red;" data-color="red"></button>
-    <button class="color-button" style="background-color: black;" data-color="black"></button>
-    <button class="color-button" style="background-color: yellow;" data-color="yellow"></button>
-    <button class="color-button" style="background-color: blue;" data-color="blue"></button>
-    <button class="color-button" style="background-color: purple;" data-color="purple"></button>
-    <button id="eraserBtn">橡皮擦</button>
-    <button id="undoBtn">復原</button>
-    <button id="clearBtn">全部清除</button>
+<div id="controls">
+  <span>你的配對代碼：</span><span id="pairCode">---</span>
+  <button id="genCodeBtn">產生新代碼</button>
+  <button id="connectBtn">連接代碼</button>
+</div>
+
+<div id="tools">
+  <span>筆刷顏色：</span>
+  <div id="colors">
+    <div class="color-btn selected" style="background:#000000;" data-color="#000000"></div>
+    <div class="color-btn" style="background:#FF0000;" data-color="#FF0000"></div>
+    <div class="color-btn" style="background:#00FF00;" data-color="#00FF00"></div>
+    <div class="color-btn" style="background:#0000FF;" data-color="#0000FF"></div>
+    <div class="color-btn" style="background:#FFFF00;" data-color="#FFFF00"></div>
   </div>
+  <button id="eraserBtn">橡皮擦</button>
+  <button id="mosaicBtn">馬賽克</button>
+  <button id="undoBtn">復原</button>
+  <button id="clearBtn">全部清除</button>
+</div>
 
-  <canvas id="canvas" width="800" height="600"></canvas>
-  <footer>© FSpeter 呂 2025所有</footer>
+<canvas id="canvas" width="800" height="600"></canvas>
 
-  <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    let drawing = false;
-    let currentColor = 'black';
-    let strokes = [];
-    let undoneStrokes = [];
+<div id="footer">© FSpeter 呂 2025所有</div>
+
+<script src="main.js"></script>
+
+<script>
+  // 這段簡單產生隨機代碼（6碼數字字母混合）
+  function generatePairCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
-
-    document.querySelectorAll('.color-button').forEach(btn => {
-      btn.addEventListener('click', () => {
-        currentColor = btn.getAttribute('data-color');
-      });
-    });
-
-    document.getElementById('eraserBtn').addEventListener('click', () => {
-      currentColor = 'white'; // 假設畫布背景為白色
-    });
-
-    document.getElementById('undoBtn').addEventListener('click', () => {
-      if (strokes.length > 0) {
-        undoneStrokes.push(strokes.pop());
-        redraw();
-      }
-    });
-
-    document.getElementById('clearBtn').addEventListener('click', () => {
-      strokes = [];
-      undoneStrokes = [];
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    });
-
-    canvas.addEventListener('mousedown', (e) => {
-      drawing = true;
-      const pos = getMousePos(e);
-      const stroke = { color: currentColor, points: [pos] };
-      strokes.push(stroke);
-    });
-
-    canvas.addEventListener('mousemove', (e) => {
-      if (!drawing) return;
-      const pos = getMousePos(e);
-      const stroke = strokes[strokes.length - 1];
-      stroke.points.push(pos);
-      drawStroke(stroke);
-    });
-
-    canvas.addEventListener('mouseup', () => {
-      drawing = false;
-      if (code) {
-        fetch('https://your-cloudflare-worker-url/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, strokes })
-        });
-      }
-    });
-
-    function getMousePos(e) {
-      const rect = canvas.getBoundingClientRect();
-      return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
+    return code;
+  }
 
-    function drawStroke(stroke) {
-      ctx.strokeStyle = stroke.color;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      const points = stroke.points;
-      ctx.moveTo(points[0].x, points[0].y);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i].x, points[i].y);
-      }
-      ctx.stroke();
-    }
+  const pairCodeEl = document.getElementById('pairCode');
+  const genCodeBtn = document.getElementById('genCodeBtn');
+  const connectBtn = document.getElementById('connectBtn');
 
-    function redraw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (const stroke of strokes) {
-        drawStroke(stroke);
-      }
-    }
+  let myCode = '';
+  let connectedCode = '';
 
-    document.getElementById('connectBtn').addEventListener('click', () => {
-      code = document.getElementById('codeInput').value.trim();
-      if (!code) {
-        alert('請輸入配對代碼');
-        return;
-      }
+  // 按產生新代碼
+  genCodeBtn.addEventListener('click', () => {
+    myCode = generatePairCode();
+    pairCodeEl.textContent = myCode;
+    connectedCode = ''; // 斷開連接
+    alert('產生配對代碼: ' + myCode);
+  });
 
-      fetch('https://your-cloudflare-worker-url/connect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code })
-      })
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById('status').innerText = '已連接：' + code;
-        startSync();
-      })
-      .catch(error => {
-        console.error('連接錯誤：', error);
-      });
-    });
+  // 按連接代碼，會跳 prompt 讓你輸入對方代碼
+  connectBtn.addEventListener('click', () => {
+    const code = prompt('請輸入對方配對代碼');
+    if (!code) return alert('沒輸入代碼就不要連接啦');
+    connectedCode = code.toUpperCase();
+    alert('已連接對方代碼: ' + connectedCode);
+  });
 
-    function startSync() {
-      setInterval(() => {
-        fetch(`https://your-cloudflare-worker-url/load?code=${code}`)
-          .then(res => res.json())
-          .then(serverStrokes => {
-            if (JSON.stringify(serverStrokes) !== JSON.stringify(strokes)) {
-              strokes = serverStrokes;
-              redraw();
-            }
-          });
-      }, 2000);
-    }
-  </script>
+  // 一開始直接產生一組
+  genCodeBtn.click();
+
+  // 之後你要跟 main.js 溝通配對代碼這樣用：
+  window.pairCode = myCode;
+  window.connectedCode = connectedCode;
+
+  // main.js 你可以改成這樣取得配對碼
+  // let myCode = window.pairCode;
+  // let connectedCode = window.connectedCode;
+
+</script>
+
 </body>
 </html>
