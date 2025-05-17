@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>P2P 畫板</title>
+  <style>
+    body { margin: 0; }
+    canvas { border: 2px solid #444; display: block; margin: auto; }
+  </style>
+</head>
+<body>
+<canvas id="board" width="800" height="600"></canvas>
+<script>
+const canvas = document.getElementById('board');
+const ctx = canvas.getContext('2d');
+let drawing = false;
+
+canvas.addEventListener('mousedown', () => drawing = true);
+canvas.addEventListener('mouseup', () => drawing = false);
+canvas.addEventListener('mousemove', e => {
+  if (!drawing) return;
+  const x = e.offsetX;
+  const y = e.offsetY;
+  draw(x, y);
+  send({ x, y });
+});
+
+function draw(x, y) {
+  ctx.fillStyle = '#333';
+  ctx.fillRect(x, y, 4, 4);
+}
+
+// === WebRTC + Signaling ===
+let peer = new RTCPeerConnection();
+let channel = peer.createDataChannel("p2p-draw");
+
+channel.onopen = () => console.log("🎉 Channel open!");
+channel.onmessage = e => {
+  const { x, y } = JSON.parse(e.data);
+  draw(x, y);
+};
+
+function send(data) {
+  if (channel && channel.readyState === "open") {
+    channel.send(JSON.stringify(data));
+  }
+}
+
+// === Signaling via Cloudflare Worker ===
+const SIGNAL_URL = 'https://你的-worker.example.workers.dev';
+
+async function connect(isInitiator) {
+  if (isInitiator) {
+    const offer = await peer.createOffer();
+    await peer.setLocalDescription(offer);
+    const id = await post(offer);
+    alert("分享這個 ID 給朋友連線！\n\n" + id);
+    const answer = await wait(id);
+    await peer.setRemoteDescription(answer);
+  } else {
+    const otherID = prompt("請輸入對方提供的 ID");
+    const offer = await get(otherID);
+    await peer.setRemoteDescription(offer);
+    const answer = await peer.createAnswer();
+    await peer.setLocalDescription(answer);
+    await post(answer, otherID);
+  }
+}
+
+peer.onicecandidate = e => {
+  if (e.candidate) return;
+};
+
+async function post(data, id = '') {
+  const res = await fetch(SIGNAL_URL + '/' + id, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+  return await res.text();
+}
+
+async function get(id) {
+  const res = await fetch(SIGNAL_URL + '/' + id);
+  return await res.json();
+}
+
+async function wait(id) {
+  let data = null;
+  while (!data) {
+    await new Promise(r => setTimeout(r, 1000));
+    const res = await fetch(SIGNAL_URL + '/' + id);
+    if (res.status === 200) data = await res.json();
+  }
+  return data;
+}
+
+// 啟動！選擇主機 or 加入
+connect(confirm("你要當房主嗎？點 '確定' 則建立連線，點 '取消' 則加入房間"));
+</script>
+</body>
+</html>
