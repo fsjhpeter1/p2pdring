@@ -1,28 +1,35 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>跨裝置同步畫圖系統</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>跨裝置同步畫圖系統</title>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="toolbar">
-    <button id="createCodeBtn">生成配對代碼</button>
-    <input id="pairCodeInput" placeholder="輸入配對代碼" />
-    <button id="joinCodeBtn">連接代碼</button>
-    <button id="undoBtn">復原</button>
-    <button id="clearCanvasBtn">清除</button>
-    <label>畫筆大小:
-      <input type="range" id="brushSize" min="1" max="20" value="3" />
-    </label>
-    <label>顏色:
-      <input type="color" id="colorPicker" value="#000000" />
-    </label>
-    <button id="eraserBtn">橡皮擦</button>
-  </div>
-  <canvas id="canvas" width="800" height="600"></canvas>
-  <div id="footer">© FSpeter 呂 2025所有</div>
-  <script src="main.js"></script>
+
+<div id="toolbar">
+  <button id="createCodeBtn">生成配對代碼</button>
+  <input id="pairCodeInput" placeholder="輸入配對代碼" />
+  <button id="joinCodeBtn">連接配對代碼</button>
+  <button id="undoBtn">復原</button>
+  <button id="clearBtn">清除自己筆跡</button>
+
+  <label>筆刷大小:
+    <input type="range" id="brushSize" min="1" max="20" value="3" />
+  </label>
+
+  <label>顏色調色盤:
+    <input type="color" id="colorPicker" value="#000000" />
+  </label>
+
+  <button id="eraserBtn">橡皮擦</button>
+</div>
+
+<canvas id="canvas" width="800" height="600"></canvas>
+
+<div id="footer">© FSpeter 呂 2025所有</div>
+
+<script src="main.js"></script>
 </body>
 </html>
