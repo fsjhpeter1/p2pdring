@@ -1,33 +1,28 @@
-body {
-  margin: 0;
-  padding: 0;
-  font-family: sans-serif;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-#toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px;
-  background: #f4f4f4;
-}
-canvas {
-  flex-grow: 1;
-  touch-action: none;
-  border: 1px solid #ccc;
-}
-footer {
-  text-align: center;
-  font-size: 0.9em;
-  color: #666;
-  padding: 5px;
-}
-input {
-  padding: 5px;
-}
-button {
-  padding: 5px 10px;
-}
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>P2P 畫圖板</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="toolbar">
+    <input id="pairCodeInput" placeholder="輸入配對代碼" />
+    <button onclick="generateCode()">生成代碼</button>
+    <button onclick="connectCode()">連接配對</button>
+    <button onclick="selectColor('#000000')">⚫</button>
+    <button onclick="selectColor('#ff0000')">🔴</button>
+    <button onclick="selectColor('#00ff00')">🟢</button>
+    <button onclick="selectColor('#0000ff')">🔵</button>
+    <button onclick="toggleEraser()">橡皮擦</button>
+    <button onclick="undo()">復原</button>
+    <button onclick="clearCanvas()">清除</button>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <footer>© FSpeter 呂 2025所有</footer>
+  <script src="main.js"></script>
+</body>
+</html>
