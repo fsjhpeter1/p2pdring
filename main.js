@@ -1,4 +1,4 @@
-const API_URL = "https://你的worker域名.workers.dev";
+const API_URL = "https://p2p-drawing.fsjhpeter1.workers.dev/";
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
