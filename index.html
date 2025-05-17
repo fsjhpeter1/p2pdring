@@ -1,207 +1,77 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>三次哥 P2P 假裝配對畫板</title>
-<style>
-  body, html { margin:0; padding:0; height:100%; background:#222; color:#eee; font-family: '微軟正黑體'; user-select:none; }
-  #tools {
-    position: fixed; top: 10px; left: 10px;
-    background: #333; padding: 10px; border-radius: 5px; z-index: 1000;
-    display: flex; flex-wrap: wrap; gap: 8px;
-  }
-  #tools button {
-    padding: 6px 10px; border: none; border-radius: 3px;
-    cursor: pointer; background: #555; color: #eee;
-  }
-  #tools button.active {
-    background: #1a73e8;
-  }
-  #pairing {
-    position: fixed; top: 10px; right: 10px;
-    background: #333; padding: 10px; border-radius: 5px; z-index: 1000;
-    color: #eee; font-weight: bold;
-    font-size: 16px;
-  }
-  #canvas {
-    display: block; margin: 60px auto 0; background: #fff;
-    cursor: crosshair; border: 2px solid #555;
-    max-width: 95vw; max-height: 80vh;
-  }
-  #copyright {
-    position: fixed; bottom: 5px; width: 100%; text-align: center;
-    font-size: 12px; color: #aaa; user-select:none;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>三次哥 P2P 畫板</title>
+  <style>
+    canvas { border: 1px solid #000; display: block; margin-top: 10px; }
+    footer { margin-top: 20px; font-size: 0.9em; color: #666; }
+  </style>
 </head>
 <body>
+  <h2>三次哥畫布 🖌️</h2>
+  <input id="code" placeholder="配對代碼">
+  <button onclick="start()">開始配對</button>
+  <p id="msg"></p>
+  <canvas id="canvas" width="600" height="400"></canvas>
+  <footer>© FSpeter 呂 2025所有</footer>
 
-<div id="tools">
-  <button id="penBtn" class="active">筆刷</button>
-  <button id="eraserBtn">橡皮擦</button>
-  <button id="highlightBtn">螢光筆</button>
-  <button id="mosaicBtn">馬賽克</button>
-  <button id="undoBtn">復原</button>
-  <button id="clearBtn">全部清除</button>
-  <button id="colorBtn">變色</button>
-  <button id="matchBtn">配對代碼</button>
-</div>
-
-<div id="pairing">
-  配對代碼: <span id="pairCode"></span>
-</div>
-
-<canvas id="canvas" width="800" height="600"></canvas>
-<div id="copyright">© FSpeter 呂 2025所有</div>
-
-<script>
-  // 亂數產生配對碼，6位數字字母混合
-  function randomPairCode(len=6) {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 去O和0防混淆
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
     let code = '';
-    for(let i=0; i<len; i++) {
-      code += chars.charAt(Math.floor(Math.random()*chars.length));
+    let lines = [];
+
+    function start() {
+      code = document.getElementById('code').value.trim();
+      if (!code) return alert('請輸入代碼');
+
+      fetch('https://p2p-drawing.fsjhpeter1.workers.dev/connect', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ code })
+      }).then(() => {
+        document.getElementById('msg').innerText = '✅ 已配對，開始畫畫！';
+        poll();
+      });
     }
-    return code;
-  }
 
-  const pairCodeSpan = document.getElementById('pairCode');
-  let myPairCode = randomPairCode();
-  pairCodeSpan.textContent = myPairCode;
-
-  document.getElementById('matchBtn').onclick = () => {
-    let inputCode = prompt('輸入配對代碼(無法真配對，純展示)：');
-    if(!inputCode) return alert('你按取消喔，廢物');
-    if(inputCode.toUpperCase() === myPairCode) {
-      alert('哇靠，配對成功！但其實只是騙你的，沒真的連線啦！');
-    } else {
-      alert('配對失敗，三次哥你配錯啦！');
+    function drawLine(x, y) {
+      ctx.fillRect(x, y, 2, 2);
     }
-  };
 
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d');
+    canvas.addEventListener('mousedown', () => drawing = true);
+    canvas.addEventListener('mouseup', () => drawing = false);
+    canvas.addEventListener('mouseout', () => drawing = false);
+    canvas.addEventListener('mousemove', e => {
+      if (!drawing || !code) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      drawLine(x, y);
 
-  let drawing = false;
-  let lastX = 0, lastY = 0;
-  let currentTool = 'pen';
-  let currentColor = '#000000';
-  let penSize = 3;
-  let highlightColor = 'rgba(255,255,0,0.4)';
-  let undoStack = [];
+      const line = { x, y, ts: Date.now() };
+      fetch('https://p2p-drawing.fsjhpeter1.workers.dev/draw', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ code, line })
+      });
+    });
 
-  function saveState() {
-    undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
-    if(undoStack.length > 50) undoStack.shift();
-  }
-
-  function setupContext() {
-    if(currentTool === 'pen') {
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.strokeStyle = currentColor;
-      ctx.lineWidth = penSize;
-      ctx.lineCap = 'round';
-    } else if(currentTool === 'eraser') {
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.lineWidth = 20;
-      ctx.lineCap = 'round';
-    } else if(currentTool === 'highlight') {
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.strokeStyle = highlightColor;
-      ctx.lineWidth = 20;
-      ctx.lineCap = 'round';
-    } else if(currentTool === 'mosaic') {
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.lineWidth = 20;
-      ctx.lineCap = 'round';
+    function poll() {
+      if (!code) return;
+      setInterval(() => {
+        fetch(`https://p2p-drawing.fsjhpeter1.workers.dev/draw?code=${code}`)
+          .then(res => res.json())
+          .then(data => {
+            if (JSON.stringify(data) === JSON.stringify(lines)) return;
+            lines = data;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let l of lines) drawLine(l.x, l.y);
+          });
+      }, 1000); // 每秒刷新
     }
-  }
-
-  function drawLine(x1, y1, x2, y2) {
-    setupContext();
-    if(currentTool === 'mosaic') {
-      const size = 10;
-      ctx.fillStyle = '#ccc';
-      ctx.beginPath();
-      ctx.rect(x2 - size/2, y2 - size/2, size, size);
-      ctx.fill();
-    } else {
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-    }
-  }
-
-  canvas.addEventListener('pointerdown', e => {
-    e.preventDefault();
-    drawing = true;
-    lastX = e.offsetX;
-    lastY = e.offsetY;
-    saveState();
-  });
-
-  canvas.addEventListener('pointermove', e => {
-    e.preventDefault();
-    if (!drawing) return;
-    drawLine(lastX, lastY, e.offsetX, e.offsetY);
-    lastX = e.offsetX;
-    lastY = e.offsetY;
-  });
-
-  canvas.addEventListener('pointerup', e => {
-    e.preventDefault();
-    drawing = false;
-  });
-
-  canvas.addEventListener('pointerleave', e => {
-    e.preventDefault();
-    drawing = false;
-  });
-
-  document.getElementById('penBtn').onclick = () => {
-    currentTool = 'pen';
-    currentColor = '#000000';
-    setActiveButton('penBtn');
-  };
-  document.getElementById('eraserBtn').onclick = () => {
-    currentTool = 'eraser';
-    setActiveButton('eraserBtn');
-  };
-  document.getElementById('highlightBtn').onclick = () => {
-    currentTool = 'highlight';
-    setActiveButton('highlightBtn');
-  };
-  document.getElementById('mosaicBtn').onclick = () => {
-    currentTool = 'mosaic';
-    setActiveButton('mosaicBtn');
-  };
-  document.getElementById('clearBtn').onclick = () => {
-    saveState();
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  };
-  document.getElementById('undoBtn').onclick = () => {
-    if(undoStack.length > 0) {
-      const lastState = undoStack.pop();
-      ctx.putImageData(lastState, 0, 0);
-    }
-  };
-  document.getElementById('colorBtn').onclick = () => {
-    const newColor = prompt('輸入顏色代碼(如 #ff0000 或 red)', currentColor);
-    if(newColor) {
-      currentColor = newColor;
-      currentTool = 'pen';
-      setActiveButton('penBtn');
-    }
-  };
-
-  function setActiveButton(id) {
-    const btns = document.querySelectorAll('#tools button');
-    btns.forEach(btn => btn.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-  }
-</script>
-
+  </script>
 </body>
 </html>
